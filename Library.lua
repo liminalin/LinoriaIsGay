@@ -3368,6 +3368,16 @@ function Library:ToggleKeybindMenu()
 	Library:SetKeybindMenuVisible(not Library.KeypickerListVisible);
 end;
 
+function Library:SetKeybindMenuMode(Mode)
+	-- Mode: "all", "active", "toggled"
+	Library.KeypickerListMode = Mode;
+	for _, obj in next, Options do
+		if obj and obj.Type == 'KeyPicker' and obj.Update then
+			pcall(function() obj:Update() end);
+		end;
+	end;
+end;
+
 function Library:SetWatermark(Text)
 	local X, Y = Library:GetTextBounds(Text, Library.Font, 14);
 	Library.Watermark.Size = UDim2.new(0, X + 15, 0, (Y * 1.5) + 3);
