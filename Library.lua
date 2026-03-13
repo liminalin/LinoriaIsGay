@@ -35,6 +35,7 @@ local Library = {
 	MainColor = Color3.fromRGB(28, 28, 28);
 	BackgroundColor = Color3.fromRGB(20, 20, 20);
 	AccentColor = Color3.fromRGB(0, 85, 255);
+	FadeColor = Color3.fromRGB(0, 85, 255);
 	OutlineColor = Color3.fromRGB(50, 50, 50);
 	RiskColor = Color3.fromRGB(255, 50, 50),
 
@@ -3831,6 +3832,125 @@ function Library:CreateWindow(...)
 		Parent = Inner;
 	});
 
+	-- ColoredTitle / ColoredVersion: letter-by-letter pulse edges-inward to FadeColor then back
+	local function buildLetterLabels(text, parentFrame, rightAlign)
+		local letters = {};
+		local function build()
+			for _, lbl in ipairs(letters) do pcall(function() lbl:Destroy() end) end;
+			table.clear(letters);
+			local totalW = 0;
+			local widths = {};
+			for i = 1, #text do
+				local w = Library:GetTextBounds(text:sub(i,i), Library.Font, 14);
+				table.insert(widths, w);
+				totalW = totalW + w;
+			end;
+			local frameW = parentFrame.AbsoluteSize.X;
+			local startX = rightAlign
+				and math.floor(frameW - totalW - 8)
+				or  math.floor((frameW - totalW) / 2);
+			local curX = startX;
+			for i = 1, #text do
+				local lbl = Library:Create('TextLabel', {
+					BackgroundTransparency = 1;
+					Position       = UDim2.fromOffset(curX, 4);
+					Size           = UDim2.fromOffset(widths[i] + 1, 18);
+					Text           = text:sub(i,i);
+					TextColor3     = Library.FontColor;
+					Font           = Library.Font;
+					TextSize       = 14;
+					TextXAlignment = Enum.TextXAlignment.Left;
+					ZIndex         = 2;
+					Parent         = parentFrame;
+				});
+				table.insert(letters, lbl);
+				curX = curX + widths[i];
+			end;
+		end;
+		task.spawn(function()
+			while parentFrame.AbsoluteSize.X == 0 do task.wait() end;
+			build();
+			parentFrame:GetPropertyChangedSignal('AbsoluteSize'):Connect(function()
+				task.defer(build);
+			end);
+		end);
+		return letters;
+	end;
+
+	local function edgesOrder(n)
+		local o = {};
+		for i = 1, math.ceil(n / 2) do
+			table.insert(o, i);
+			if i ~= n - i + 1 then table.insert(o, n - i + 1) end;
+		end;
+		return o;
+	end;
+
+	if Config.ColoredTitle and Config.Title and #Config.Title > 0 then
+		WindowLabel.Text = '';
+		local letters = buildLetterLabels(Config.Title, Inner, false);
+		task.spawn(function()
+			while #letters == 0 do task.wait() end;
+			local delay = 0.07; local ft = 0.2; local pause = 1.8;
+			while Inner.Parent do
+				local n = #letters;
+				if n == 0 then task.wait(0.5); continue end;
+				local fc = Library.FadeColor;
+				local ord = edgesOrder(n);
+				for _, i in ipairs(ord) do
+					if not Inner.Parent then break end;
+					if letters[i] and letters[i].Parent then
+						TweenService:Create(letters[i], TweenInfo.new(ft), { TextColor3 = fc }):Play();
+					end;
+					task.wait(delay);
+				end;
+				task.wait(ft);
+				local rev = {}; for j = #ord, 1, -1 do table.insert(rev, ord[j]) end;
+				for _, i in ipairs(rev) do
+					if not Inner.Parent then break end;
+					if letters[i] and letters[i].Parent then
+						TweenService:Create(letters[i], TweenInfo.new(ft), { TextColor3 = Library.FontColor }):Play();
+					end;
+					task.wait(delay);
+				end;
+				task.wait(ft + pause);
+			end;
+		end);
+	end;
+
+	if Config.ColoredVersion and Config.Version and #tostring(Config.Version) > 0 then
+		VersionLabel.Text = '';
+		local ver = tostring(Config.Version);
+		local letters = buildLetterLabels(ver, Inner, true);
+		task.spawn(function()
+			while #letters == 0 do task.wait() end;
+			local delay = 0.07; local ft = 0.2; local pause = 1.8;
+			while Inner.Parent do
+				local n = #letters;
+				if n == 0 then task.wait(0.5); continue end;
+				local fc = Library.FadeColor;
+				local ord = edgesOrder(n);
+				for _, i in ipairs(ord) do
+					if not Inner.Parent then break end;
+					if letters[i] and letters[i].Parent then
+						TweenService:Create(letters[i], TweenInfo.new(ft), { TextColor3 = fc }):Play();
+					end;
+					task.wait(delay);
+				end;
+				task.wait(ft);
+				local rev = {}; for j = #ord, 1, -1 do table.insert(rev, ord[j]) end;
+				for _, i in ipairs(rev) do
+					if not Inner.Parent then break end;
+					if letters[i] and letters[i].Parent then
+						TweenService:Create(letters[i], TweenInfo.new(ft), { TextColor3 = Library.FontColor }):Play();
+					end;
+					task.wait(delay);
+				end;
+				task.wait(ft + pause);
+			end;
+		end);
+	end;
+
 	local MainSectionOuter = Library:Create('Frame', {
 		BackgroundColor3 = Library.BackgroundColor;
 		BorderColor3 = Library.OutlineColor;
@@ -3882,7 +4002,6 @@ function Library:CreateWindow(...)
 		ZIndex = 2;
 		Parent = MainSectionInner;
 	});
-
 
 	Library:AddToRegistry(TabContainer, {
 		BackgroundColor3 = 'MainColor';
