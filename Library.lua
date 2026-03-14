@@ -53,7 +53,7 @@ local Library = {
 		X= 0;
 	};
 
-	KeypickerListVisible = true;
+	KeypickerListVisible = false;
 	KeypickerListMode = "All"; --[[
 		{
 			"Active",
@@ -4014,10 +4014,13 @@ function Library:CreateWindow(...)
 		BackgroundColor3 = 'BackgroundColor';
 	});
 
-	local TabArea = Library:Create('Frame', {
+	local TabArea = Library:Create('ScrollingFrame', {
 		BackgroundTransparency = 1;
 		Position = UDim2.new(0, 8, 0, 8);
 		Size = UDim2.new(1, -16, 0, 21);
+		CanvasSize = UDim2.new(0, 0, 0, 0);
+		ScrollBarThickness = 0;
+		ScrollingDirection = Enum.ScrollingDirection.X;
 		ZIndex = 1;
 		Parent = MainSectionInner;
 	});
@@ -4028,6 +4031,10 @@ function Library:CreateWindow(...)
 		SortOrder = Enum.SortOrder.LayoutOrder;
 		Parent = TabArea;
 	});
+
+	TabListLayout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
+		TabArea.CanvasSize = UDim2.fromOffset(TabListLayout.AbsoluteContentSize.X, 0);
+	end);
 
 	local TabContainer = Library:Create('Frame', {
 		BackgroundColor3 = Library.MainColor;
@@ -4542,70 +4549,6 @@ function Library:CreateWindow(...)
 		if Toggled then
 			-- A bit scuffed, but if we're going from not toggled -> toggled we want to show the frame immediately so that the fade is visible.
 			Outer.Visible = true;
-			local guiservice = game:GetService("GuiService");
-			task.spawn(function()
-				-- TODO: optimize cursor fade to be only 2 lines
-				local State = InputService.MouseIconEnabled;
-				--local Cursor = Drawing.new('Triangle');
-				--Cursor.Thickness = 1;
-				--Cursor.Filled = true;
-				--Cursor.Visible = true;
-
-				--local CursorOutline = Drawing.new('Triangle');
-				--CursorOutline.Thickness = 1;
-				--CursorOutline.Filled = false;
-				--CursorOutline.Color = Color3.new(0, 0, 0);
-				--CursorOutline.Visible = true;
-
-				local Cursor = Instance.new("ImageLabel", ScreenGui);
-				Cursor.Image = "http://www.roblox.com/asset/?id=4292970642";
-				Cursor.BackgroundTransparency = 1;
-				Cursor.ImageTransparency = 1;
-				Cursor.ZIndex = 100;
-
-				local CursorOutline = Instance.new("ImageLabel", ScreenGui);
-				CursorOutline.Image = "http://www.roblox.com/asset/?id=4292970642";
-				CursorOutline.ImageColor3 = Color3.new();
-				CursorOutline.BackgroundTransparency = 1;
-				CursorOutline.ImageTransparency = 1;
-				CursorOutline.ZIndex = 99;
-
-				-- Ts for now
-				TweenService:Create(Cursor, TweenInfo.new(FadeTime, Enum.EasingStyle.Linear), { ImageTransparency = 0 }):Play();
-				TweenService:Create(CursorOutline, TweenInfo.new(FadeTime, Enum.EasingStyle.Linear), { ImageTransparency = 0 }):Play();
-
-				Cursor.Size, CursorOutline.Size = UDim2.fromOffset(17, 17),  UDim2.fromOffset(19, 19);
-				Cursor.Rotation, CursorOutline.Rotation = -45, -45;
-				while Toggled and ScreenGui.Parent do
-					InputService.MouseIconEnabled = false;
-
-					local mPos = InputService:GetMouseLocation();
-					local udim = UDim2.fromOffset(mPos.X, mPos.Y - guiservice:GetGuiInset().Y - 1);
-
-					Cursor.ImageColor3 = Library.AccentColor;
-					Cursor.Position, CursorOutline.Position = udim, udim - UDim2.fromOffset(1, 1);
-
-					--Cursor.PointA = Vector2.new(mPos.X, mPos.Y);
-					--Cursor.PointB = Vector2.new(mPos.X + 16, mPos.Y + 6);
-					--Cursor.PointC = Vector2.new(mPos.X + 6, mPos.Y + 16);
-
-					--CursorOutline.PointA = Cursor.PointA;
-					--CursorOutline.PointB = Cursor.PointB;
-					--CursorOutline.PointC = Cursor.PointC;
-
-					RenderStepped:Wait();
-				end;
-
-				InputService.MouseIconEnabled = State;
-
-				TweenService:Create(Cursor, TweenInfo.new(FadeTime, Enum.EasingStyle.Linear), { ImageTransparency = 1 }):Play();
-				TweenService:Create(CursorOutline, TweenInfo.new(FadeTime, Enum.EasingStyle.Linear), { ImageTransparency = 1 }):Play();
-				
-				task.wait(FadeTime);
-
-				Cursor:Destroy();
-				CursorOutline:Destroy();
-			end);
 		end;
 
 		if (not Config.DontFade) then
